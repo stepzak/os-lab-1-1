@@ -10,4 +10,5 @@ add_executable(os_lab_1 main.c
         common/code/common/unlikely.h
         common/code/os/os.h
         common/code/os/posix/os_posix.h
-        common/code/os/posix/os_posix.c)
+        common/code/os/posix/os_posix.c
+        common/code/os/os.c)

@@ -1,0 +1,37 @@
+#include "os.h"
+#include <string.h>
+#include "../common/unlikely.h"
+
+VecStatus os_info_add_arg(os_process_info_t *info, const char *arg) {
+    char *copy = strdup(arg);
+    if (unlikely(!copy)) {
+        return CVEC_ERROR_BAD_ALLOC;
+    }
+    size_t orig_len = v_len(info->args);
+    int overwrote_null = 0;
+
+    if (orig_len > 0 && info->args[orig_len - 1] == NULL) {
+        info->args[orig_len - 1] = copy;
+        overwrote_null = 1;
+    } else {
+        VecStatus status = v_push(info->args, copy);
+        if (unlikely(status != CVEC_SUCCESS)) {
+            free(copy);
+            return status;
+        }
+    }
+
+    VecStatus ret_status = v_push(info->args, (char*)NULL);
+    if (unlikely(ret_status != CVEC_SUCCESS)) {
+        if (overwrote_null) {
+            info->args[orig_len - 1] = NULL;
+        } else {
+            v_pop(info->args);
+        }
+
+        free(copy);
+        return ret_status;
+    }
+
+    return CVEC_SUCCESS;
+}

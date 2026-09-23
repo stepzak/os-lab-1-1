@@ -26,6 +26,8 @@ typedef struct {
     os_file_handle_t redirect_stderr;
 } os_process_info_t;
 
+VecStatus os_info_add_arg(os_process_info_t *info, const char *arg);
+
 void os_process_info_init(os_process_info_t *info);
 void os_process_info_destroy(os_process_info_t *info);
 

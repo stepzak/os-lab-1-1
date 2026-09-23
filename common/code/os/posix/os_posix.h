@@ -1,8 +1,8 @@
 #ifndef OS_POSIX_H
 #define OS_POSIX_H
 
-#include "../os.h"
 #include "../../common/auto.h"
+#include "../os.h"
 #include <unistd.h>
 
 static void on_file_close(os_file_handle_t *fd) {
@@ -33,6 +33,6 @@ static void proc_info_cleanup(os_process_info_t **info) {
     *info = NULL;
 }
 
-DEFINE_CLEANUP_TYPE(AutoProcInfo, os_proc_info_t*, proc_info_cleanup, NULL)
+DEFINE_CLEANUP_TYPE(AutoProcInfo, os_process_info_t*, proc_info_cleanup, NULL)
 
 #endif //OS_POSIX_H
