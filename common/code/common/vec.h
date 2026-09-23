@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define VEC_INIT_CAP 2
+#define VEC_INIT_CAP 8
 #if (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
 #define VEC_CHECK_TYPE(v, elem) _Static_assert(__builtin_types_compatible_p(typeof(elem), typeof(*(v))), "Type mismatch in vector operation")
 #else
