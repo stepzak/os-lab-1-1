@@ -2,7 +2,7 @@
 #include <string.h>
 #include "../common/unlikely.h"
 
-VecStatus os_info_add_arg(os_process_info_t *info, const char *arg) {
+VecStatus os_proc_info_add_arg(os_process_info_t *info, const char *arg) {
     char *copy = strdup(arg);
     if (unlikely(!copy)) {
         return CVEC_ERROR_BAD_ALLOC;
@@ -34,4 +34,22 @@ VecStatus os_info_add_arg(os_process_info_t *info, const char *arg) {
     }
 
     return CVEC_SUCCESS;
+}
+
+void os_proc_info_init(os_process_info_t *info) {
+    if (!info) return;
+
+    memset(info, 0, sizeof(os_process_info_t));
+    info->redirect_stdin  = OS_INVALID_HANDLE;
+    info->redirect_stdout = OS_INVALID_HANDLE;
+    info->redirect_stderr = OS_INVALID_HANDLE;
+}
+
+void os_proc_info_destroy(os_process_info_t *info) {
+    if (!info || !info->args) return;
+
+    v_free_with_dtor(info->args, os_string_destroy);
+    info->args = NULL;
+    info->cmd = NULL;
+    info->workdir = NULL;
 }
