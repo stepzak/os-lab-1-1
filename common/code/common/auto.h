@@ -1,9 +1,7 @@
 #ifndef AUTO_H
 #define AUTO_H
-
+#include "unlikely.h"
 #if defined(__clang__) || defined(__GNUC__)
-#define unlikely(x)	__builtin_expect(!!(x), 0)
-#define likely(x)	__builtin_expect(!!(x), 1)
 
 #define DEFINE_CLEANUP_TYPE(TypeName, BaseType, CleanupFunc, InvalidValue) \
     typedef BaseType TypeName;\
