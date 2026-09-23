@@ -9,6 +9,7 @@ add_executable(os_lab_1 main.c
         common/code/common/vec.c
         common/code/common/unlikely.h
         common/code/os/os.h
-        common/code/os/posix/os_posix.h
-        common/code/os/posix/os_posix.c
-        common/code/os/os.c)
+        common/code/os/posix/dtors.h
+        common/code/os/posix/process.c
+        common/code/os/os.c
+        common/code/os/posix/pipe.c)

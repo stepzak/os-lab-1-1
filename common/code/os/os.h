@@ -44,7 +44,11 @@ os_process_handle_t os_process_create(const os_process_info_t *info);
 int os_pipe_create(os_file_handle_t *read_pipe, os_file_handle_t *write_pipe);
 
 int os_pipe_write(os_file_handle_t pipe, const void *buf, int count);
+int os_pipe_write_full(os_file_handle_t pipe, const void *buf, int count);
+
 int os_pipe_read(os_file_handle_t pipe, void *buf, int count);
+int os_pipe_read_full(os_file_handle_t pipe, void *buf, int count);
+
 
 void os_process_close(os_process_handle_t proc);
 void os_process_kill(os_process_handle_t proc, unsigned ret_code);

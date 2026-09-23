@@ -1,4 +1,4 @@
-#include "os_posix.h"
+#include "dtors.h"
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -10,6 +10,7 @@
 #ifndef CHAR_STACK_SIZE
 #define CHAR_STACK_SIZE 1024
 #endif
+
 
 int os_pipe_create(os_file_handle_t *read_pipe, os_file_handle_t *write_pipe) {
     if (!read_pipe || !write_pipe) {
@@ -41,7 +42,6 @@ int os_pipe_create(os_file_handle_t *read_pipe, os_file_handle_t *write_pipe) {
     return 0;
 }
 
-
 os_process_handle_t os_process_create(const os_process_info_t *info) {
     (void)info->flags;
     os_file_handle_t r_pipe = OS_INVALID_HANDLE;
@@ -62,7 +62,7 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
         if (info->redirect_stdin != OS_INVALID_HANDLE) {
             if (unlikely(dup2(info->redirect_stdin, STDIN_FILENO) < 0)) {
                 int err = errno;
-                (void)write(child_write_fd, &err, sizeof(err));
+                (void)os_pipe_write_full(child_write_fd, &err, sizeof(err));
                 _exit(EXIT_FAILURE);
             }
             close(info->redirect_stdin);
@@ -70,7 +70,7 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
         if (info->redirect_stdout != OS_INVALID_HANDLE) {
             if (unlikely(dup2(info->redirect_stdout, STDOUT_FILENO) < 0)) {
                 int err = errno;
-                (void)write(child_write_fd, &err, sizeof(err));
+                (void)os_pipe_write_full(child_write_fd, &err, sizeof(err));
                 _exit(EXIT_FAILURE);
             }
             close(info->redirect_stdout);
@@ -78,7 +78,8 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
         if (info->redirect_stderr != OS_INVALID_HANDLE) {
             if (unlikely(dup2(info->redirect_stderr, STDERR_FILENO) < 0)) {
                 int err = errno;
-                (void)write(child_write_fd, &err, sizeof(err));
+                (void)os_pipe_write_full(child_write_fd, &err, sizeof(err));
+
                 _exit(EXIT_FAILURE);
             }
             close(info->redirect_stderr);
@@ -87,7 +88,7 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
         if (info->workdir != NULL) {
             if (unlikely(chdir(info->workdir) < 0)) {
                 int err = errno;
-                (void)write(child_write_fd, &err, sizeof(err));
+                (void)os_pipe_write_full(child_write_fd, &err, sizeof(err));
                 _exit(EXIT_FAILURE);
             }
         }
@@ -100,7 +101,6 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
                     total_len += strlen(info->args[i]) + 1;
                 }
             }
-            int malloced = 0;
             char* shell_cmd;
             char st_buf[CHAR_STACK_SIZE];
             if (total_len <= CHAR_STACK_SIZE) {
@@ -109,10 +109,9 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
                 shell_cmd = malloc(total_len);
                 if (unlikely(shell_cmd == NULL)) {
                     int err = ENOMEM;
-                    write(child_write_fd, &err, sizeof(err));
+                    (void)os_pipe_write_full(child_write_fd, &err, sizeof(err));
                     _exit(EXIT_FAILURE);
                 }
-                malloced = 1;
             }
             size_t offset = 0;
             memcpy(shell_cmd, info->cmd, strlen(info->cmd));
@@ -130,14 +129,16 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
 
 
             int err = errno;
-            (void)write(child_write_fd, &err, sizeof(err));
+            (void)os_pipe_write_full(child_write_fd, &err, sizeof(err));
+            if (total_len > CHAR_STACK_SIZE) free(shell_cmd);
             _exit(EXIT_FAILURE);
         } else {
             char *const *argv = info->args;
 
             execv(info->cmd, argv);
             int err = errno;
-            (void)write(child_write_fd, &err, sizeof(err));
+            (void)os_pipe_write_full(child_write_fd, &err, sizeof(err));
+
             _exit(EXIT_FAILURE);
         }
 
@@ -145,10 +146,7 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
     }
     close(move_out(AutoFile, child_write_fd));
     int child_errno = 0;
-    ssize_t bytes;
-    do {
-        bytes = read(parent_read_fd, &child_errno, sizeof(child_errno));
-    } while (bytes < 0 && errno == EINTR);
+    ssize_t bytes = os_pipe_read_full(parent_read_fd, &child_errno, sizeof(child_errno));
 
     if (bytes < 0) {
         int status;
@@ -164,4 +162,17 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
     }
 
     return pid;
+}
+
+void os_process_close(os_process_handle_t proc) {
+    if (proc != OS_INVALID_HANDLE) {
+        int status;
+        waitpid(proc, &status, 0);
+    }
+}
+
+void os_process_kill(os_process_handle_t proc, unsigned ret_code) {
+    if (proc != OS_INVALID_HANDLE) return;
+    (void)ret_code;
+    kill(proc, SIGKILL);
 }
