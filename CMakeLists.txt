@@ -1,17 +1,25 @@
-cmake_minimum_required(VERSION 3.30)
-project(os_lab_1 C)
+cmake_minimum_required(VERSION 3.10)
+project(os_lab2 C)
 
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
 
-add_executable(os_lab_1 main.c
-        common/code/common/auto.h
-        common/code/common/vec.h
-        common/code/common/vec.c
-        common/code/common/unlikely.h
-        common/code/os/os.h
-        common/code/os/posix/dtors.h
-        common/code/os/posix/process.c
-        common/code/os/os.c
-        common/code/os/posix/pipe.c
-        common/code/src/parent.c
-        common/code/os/posix/file.c)
+if(MSVC)
+    add_compile_options(/W4)
+else()
+    add_compile_options(-Wall -Wextra)
+endif()
+
+add_subdirectory(common)
+add_subdirectory(common/code/os)
+
+add_executable(parent common/code/src/parent.c)
+add_executable(child common/code/src/child.c)
+
+target_link_libraries(parent PRIVATE os_lib)
+target_link_libraries(child PRIVATE os_lib)
+
+set_target_properties(parent child PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)

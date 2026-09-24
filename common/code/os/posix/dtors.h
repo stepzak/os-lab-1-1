@@ -2,6 +2,7 @@
 #define OS_POSIX_H
 
 #include <errno.h>
+#include <stdio.h>
 
 #include "../../common/auto.h"
 #include "../os.h"
@@ -12,7 +13,6 @@ static void on_file_close(os_file_handle_t *fd) {
     int saved_errno = errno;
 
     (void)close(*fd);
-    *fd = OS_INVALID_HANDLE;
     errno = saved_errno;
 }
 
@@ -42,7 +42,6 @@ static void proc_info_cleanup(os_process_info_t **info) {
     if (unlikely(!info || *info == NULL)) return;
 
     os_process_info_destroy(*info);
-    *info = NULL;
 }
 
 DEFINE_CLEANUP_TYPE(AutoProcInfo, os_process_info_t*, proc_info_cleanup, NULL)

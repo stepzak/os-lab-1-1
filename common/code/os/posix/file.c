@@ -23,7 +23,7 @@ os_file_handle_t os_file_open(const char *path, os_file_flags_t flags) {
     if (flags & OS_FILE_CREATE) posix_flag |= O_CREAT;
     if (flags & OS_FILE_TRUNCATE) posix_flag |= O_TRUNC;
 
-    int fd = open(path, posix_flag | O_CLOEXEC, 0644);
+    int fd = open(path, posix_flag, 0644);
     if (fd < 0) {
         return OS_INVALID_HANDLE;
     }

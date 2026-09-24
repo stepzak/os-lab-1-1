@@ -11,37 +11,6 @@
 #define CHAR_STACK_SIZE 1024
 #endif
 
-
-int os_pipe_create(os_file_handle_t *read_pipe, os_file_handle_t *write_pipe) {
-    if (!read_pipe || !write_pipe) {
-        errno = EINVAL;
-        return -1;
-    }
-
-    AUTO(AutoFile) fds[2] = { OS_INVALID_HANDLE, OS_INVALID_HANDLE };
-
-    if (unlikely(pipe((int*)fds) < 0)) {
-        return -1;
-    }
-
-    for (int i = 0; i < 2; i++) {
-        if (fds[i] <= STDERR_FILENO) {
-            int new_fd = fcntl((int)fds[i], F_DUPFD_CLOEXEC, 3);
-            if (new_fd < 0) return -1;
-            close((int)fds[i]);
-            fds[i] = new_fd;
-        }
-        int flags = fcntl((int)fds[i], F_GETFD);
-        if (flags < 0 || fcntl((int)fds[i], F_SETFD, flags | FD_CLOEXEC) < 0) {
-            return -1;
-        }
-    }
-
-    *read_pipe = move_out(AutoFile, fds[0]);
-    *write_pipe = move_out(AutoFile, fds[1]);
-    return 0;
-}
-
 os_process_handle_t os_process_create(const os_process_info_t *info) {
     (void)info->flags;
     os_file_handle_t r_pipe = OS_INVALID_HANDLE;

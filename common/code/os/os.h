@@ -56,12 +56,10 @@ static void os_string_destroy(char **arg) {
     *arg = NULL;
 }
 
-VecStatus os_info_add_arg(os_process_info_t *info, const char *arg);
+VecStatus os_proc_info_add_arg(os_process_info_t *info, const char *arg);
 
 void os_process_info_init(os_process_info_t *info);
 void os_process_info_destroy(os_process_info_t *info);
-
-void os_process_info_add_arg(os_process_info_t *info, const char *arg);
 
 os_process_handle_t os_process_create(const os_process_info_t *info);
 

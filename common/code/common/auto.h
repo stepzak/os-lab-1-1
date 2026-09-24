@@ -9,7 +9,7 @@
     static inline void __cleanup_##TypeName(TypeName *ptr) { \
         if (unlikely(!ptr)) return; \
         if (likely(*ptr != InvalidValue)) { \
-            CleanupFunc((BaseType*) (*ptr)); \
+            CleanupFunc(ptr); \
             *ptr = InvalidValue; \
         } \
     } \
