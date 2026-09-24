@@ -36,17 +36,6 @@ static void parser_flush(ParserState *state) {
     state->has_sign = false;
 }
 
-static const uint8_t char_class[256] = {
-    ['0'] = 1, ['1'] = 1, ['2'] = 1, ['3'] = 1, ['4'] = 1,
-    ['5'] = 1, ['6'] = 1, ['7'] = 1, ['8'] = 1, ['9'] = 1,
-    ['-'] = 2,
-    ['+'] = 2,
-    ['\n'] = 3,
-    ['\r'] = 3,
-    [' '] = 3,
-    ['\t'] = 3,
-};
-
 
 static void parser_process_char(ParserState *state, char ch) {
     if (isspace((unsigned char)ch)) {
