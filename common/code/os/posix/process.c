@@ -26,13 +26,13 @@ int os_pipe_create(os_file_handle_t *read_pipe, os_file_handle_t *write_pipe) {
 
     for (int i = 0; i < 2; i++) {
         if (fds[i] <= STDERR_FILENO) {
-            int new_fd = fcntl(fds[i], F_DUPFD_CLOEXEC, 3);
+            int new_fd = fcntl((int)fds[i], F_DUPFD_CLOEXEC, 3);
             if (new_fd < 0) return -1;
-            close(fds[i]);
+            close((int)fds[i]);
             fds[i] = new_fd;
         }
-        int flags = fcntl(fds[i], F_GETFD);
-        if (flags < 0 || fcntl(fds[i], F_SETFD, flags | FD_CLOEXEC) < 0) {
+        int flags = fcntl((int)fds[i], F_GETFD);
+        if (flags < 0 || fcntl((int)fds[i], F_SETFD, flags | FD_CLOEXEC) < 0) {
             return -1;
         }
     }
@@ -65,7 +65,7 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
                 (void)os_pipe_write_full(child_write_fd, &err, sizeof(err));
                 _exit(EXIT_FAILURE);
             }
-            close(info->redirect_stdin);
+            close((int)(info->redirect_stdin));
         }
         if (info->redirect_stdout != OS_INVALID_HANDLE) {
             if (unlikely(dup2(info->redirect_stdout, STDOUT_FILENO) < 0)) {
@@ -73,7 +73,7 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
                 (void)os_pipe_write_full(child_write_fd, &err, sizeof(err));
                 _exit(EXIT_FAILURE);
             }
-            close(info->redirect_stdout);
+            close((int)info->redirect_stdout);
         }
         if (info->redirect_stderr != OS_INVALID_HANDLE) {
             if (unlikely(dup2(info->redirect_stderr, STDERR_FILENO) < 0)) {
@@ -82,7 +82,7 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
 
                 _exit(EXIT_FAILURE);
             }
-            close(info->redirect_stderr);
+            close((int)info->redirect_stderr);
         }
 
         if (info->workdir != NULL) {
@@ -167,12 +167,12 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
 void os_process_close(os_process_handle_t proc) {
     if (proc != OS_INVALID_HANDLE) {
         int status;
-        waitpid(proc, &status, 0);
+        waitpid((int)proc, &status, 0);
     }
 }
 
 void os_process_kill(os_process_handle_t proc, unsigned ret_code) {
     if (proc != OS_INVALID_HANDLE) return;
     (void)ret_code;
-    kill(proc, SIGKILL);
+    kill((int)proc, SIGKILL);
 }
