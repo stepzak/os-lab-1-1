@@ -1,14 +1,20 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "../os/os.h"
 
-int main() {
+int main(int argc, char *argv[]) {
     char filename[256];
-    printf("Enter filename: ");
-    if (scanf("%255s", filename) != 1) {
-        fprintf(stderr, "Failed to read file name from stdin\n");
-        return EXIT_FAILURE;
+    if (argc < 2) {
+        printf("Enter filename: ");
+        if (scanf("%255s", filename) != 1) {
+            fprintf(stderr, "Failed to read file name from stdin\n");
+            return EXIT_FAILURE;
+        }
+    } else {
+        strcpy(filename, argv[1]);
     }
+
 
     os_file_handle_t file = os_file_open(filename, OS_FILE_READ);
     if (file == OS_INVALID_HANDLE) {
