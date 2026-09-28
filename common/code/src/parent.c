@@ -17,20 +17,19 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Failed to read file name from stdin\n");
             return EXIT_FAILURE;
         }
-        filename[strcspn(filename, "\n")] = '\0';
 
         printf("Enter path to the child process: ");
         if (fgets(childname, sizeof(childname), stdin) == NULL) {
             fprintf(stderr, "Failed to read child path from stdin\n");
             return EXIT_FAILURE;
         }
-        childname[strcspn(childname, "\n")] = '\0';
     } else {
         strncpy(filename, argv[1], sizeof(filename) - 1);
         strncpy(childname, argv[2], sizeof(childname) - 1);
     }
+    filename[strcspn(filename, "\n")] = '\0';
+    childname[strcspn(childname, "\n")] = '\0';
 
-    printf("%s\n", filename);
     os_file_handle_t file = os_file_open(filename, OS_FILE_READ);
     if (file == OS_INVALID_HANDLE) {
         perror("Failed to open file");
