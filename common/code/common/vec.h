@@ -24,8 +24,8 @@ typedef struct {
 
 #define Vec(T) T*
 
-[[nodiscard]] VecStatus vector_grow_impl(void** data, size_t element_size, size_t prefix);
-[[nodiscard]] VecStatus vector_reserve_impl(void** data, size_t element_size, size_t capacity, size_t prefix);
+VecStatus vector_grow_impl(void** data, size_t element_size, size_t prefix);
+VecStatus vector_reserve_impl(void** data, size_t element_size, size_t capacity, size_t prefix);
 VecStatus vector_shrink_impl(void** data, size_t element_size);
 void vector_remove_impl(void** data, size_t element_size, size_t index);
 void* v_alloc_with_prefix(size_t prefix_size, size_t item_size, size_t initial_cap);

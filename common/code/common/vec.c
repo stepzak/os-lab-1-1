@@ -17,7 +17,7 @@ void* v_alloc_with_prefix(size_t prefix_size, size_t item_size, size_t initial_c
     return (char*)block + header_size;
 }
 
-[[nodiscard]] VecStatus vector_reserve_impl(void** data, size_t element_size, size_t capacity, size_t prefix) {
+VecStatus vector_reserve_impl(void** data, size_t element_size, size_t capacity, size_t prefix) {
     size_t new_size = prefix + sizeof(VecHeader) + capacity * element_size;
     void* old_block = *data ? (char*)v_header(*data) - prefix : NULL;
     size_t header_size = prefix + sizeof(VecHeader);
@@ -31,7 +31,7 @@ void* v_alloc_with_prefix(size_t prefix_size, size_t item_size, size_t initial_c
     return CVEC_SUCCESS;
 }
 
-[[nodiscard]] VecStatus vector_grow_impl(void** data, size_t element_size, size_t prefix) {
+VecStatus vector_grow_impl(void** data, size_t element_size, size_t prefix) {
     size_t new_cap = *data == NULL ? VEC_INIT_CAP : v_header(*data)->capacity * 2;
     return vector_reserve_impl(data, element_size, new_cap, prefix);
 }
