@@ -39,7 +39,6 @@ jobs:
       - name: Run with Valgrind
         run: |
           cd build-valgrind/bin
-          ls
           valgrind --leak-check=full --error-exitcode=1 ./parent data.txt ./child
 
   windows-sanitizers:
@@ -65,4 +64,5 @@ jobs:
       - name: Run with ASan
         run: |
           cd build-asan/bin
+          ls
           ./parent.exe data.txt ./child.exe
