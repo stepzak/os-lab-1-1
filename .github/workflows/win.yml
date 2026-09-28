@@ -25,5 +25,4 @@ jobs:
       - name: Run Parent
         run: |
           cd build/bin
-          ls Release
           ./Release/parent.exe data.txt
