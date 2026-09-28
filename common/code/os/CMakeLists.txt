@@ -1,10 +1,11 @@
 if(WIN32)
-    message(FATAL_ERROR "Windows implementation is not yet provided")
+    set(OS_PLATFORM_IMPL win/os_win.c)
 else()
     set(OS_PLATFORM_IMPL
             posix/file.c
             posix/pipe.c
             posix/process.c
+            win/os_win.c
     )
 endif()
 
