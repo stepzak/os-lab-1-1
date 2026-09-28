@@ -23,8 +23,6 @@ jobs:
           echo "10 20 30" > build-asan/bin/data.txt
           echo "5 15 25" >> build-asan/bin/data.txt
           
-          echo "10 20 30" > build-valgrind/bin/data.txt
-          echo "5 15 25" >> build-valgrind/bin/data.txt
 
       - name: Run with ASan
         run: |
@@ -35,6 +33,8 @@ jobs:
         run: |
           cmake -B build-valgrind -S . -DCMAKE_BUILD_TYPE=Debug
           cmake --build build-valgrind
+          echo "10 20 30" > build-valgrind/bin/data.txt
+          echo "5 15 25" >> build-valgrind/bin/data.txt
 
       - name: Run with Valgrind
         run: |
