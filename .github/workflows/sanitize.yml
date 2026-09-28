@@ -49,6 +49,17 @@ jobs:
       - name: Install CMake
         uses: lukka/get-cmake@latest
 
+      - name: Copy ASan DLL to output directory
+        shell: pwsh
+        run: |
+          $asan_dll = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter "clang_rt.asan_dynamic-x86_64.dll" | Select-Object -First 1
+          if ($asan_dll) {
+              Write-Host "Found ASan DLL: $($asan_dll.FullName)"
+              Copy-Item $asan_dll.FullName build-asan/bin/
+          } else {
+              Write-Error "ASan DLL not found!"
+          }
+
       - name: Build with ASan (MSVC)
         run: |
           cmake -B build-asan -S . `
