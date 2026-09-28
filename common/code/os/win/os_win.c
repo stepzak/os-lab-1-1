@@ -237,6 +237,14 @@ os_process_handle_t os_process_create(const os_process_info_t *info) {
     if (!CreateProcessA(
         info->cmd, cmdline, NULL, NULL, TRUE, 0, NULL,
         info->workdir, &si, &pi)) {
+        DWORD win_err = GetLastError();
+        if (win_err == ERROR_FILE_NOT_FOUND || win_err == ERROR_PATH_NOT_FOUND) {
+            errno = ENOENT;
+        } else if (win_err == ERROR_ACCESS_DENIED) {
+            errno = EACCES;
+        } else {
+            errno = EIO;
+        }
         return OS_INVALID_HANDLE;
     }
 
