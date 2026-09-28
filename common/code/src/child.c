@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "../os/os.h"
+#include <windows.h>
+
 
 #define OS_STDIN_FILENO ((os_file_handle_t)0)
 #define READ_BUFFER_SIZE 4096
