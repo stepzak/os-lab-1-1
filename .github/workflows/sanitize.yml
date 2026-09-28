@@ -52,6 +52,7 @@ jobs:
       - name: Copy ASan DLL to output directory
         shell: pwsh
         run: |
+          mkdir -p build-asan/bin
           $asan_dll = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter "clang_rt.asan_dynamic-x86_64.dll" | Select-Object -First 1
           if ($asan_dll) {
               Write-Host "Found ASan DLL: $($asan_dll.FullName)"
