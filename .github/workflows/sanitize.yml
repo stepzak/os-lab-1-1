@@ -9,7 +9,9 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Install Valgrind
-        run: sudo apt-get install -y valgrind
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
 
       - name: Build with ASan
         run: |
@@ -20,9 +22,9 @@ jobs:
 
       - name: Create test data
         run: |
+          mkdir -p build-asan/bin
           echo "10 20 30" > build-asan/bin/data.txt
           echo "5 15 25" >> build-asan/bin/data.txt
-          
 
       - name: Run with ASan
         run: |
@@ -33,6 +35,7 @@ jobs:
         run: |
           cmake -B build-valgrind -S . -DCMAKE_BUILD_TYPE=Debug
           cmake --build build-valgrind
+          mkdir -p build-valgrind/bin
           echo "10 20 30" > build-valgrind/bin/data.txt
           echo "5 15 25" >> build-valgrind/bin/data.txt
 
@@ -50,6 +53,7 @@ jobs:
         uses: lukka/get-cmake@latest
 
       - name: Build with ASan (MSVC)
+        shell: pwsh
         run: |
           cmake -B build-asan -S . `
             -DCMAKE_C_FLAGS="/fsanitize=address /Zi /Od /MD" `
@@ -59,17 +63,23 @@ jobs:
       - name: Copy ASan DLL
         shell: pwsh
         run: |
-          $dll = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter "clang_rt.asan_dynamic-x86_64.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($dll) { Copy-Item $dll.FullName build-asan/bin/ }
+          \$dll = Get-ChildItem -Path "C:\Program Files\Microsoft Visual Studio" -Recurse -Filter "clang_rt.asan_dynamic-x86_64.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (\$dll) { 
+              New-Item -ItemType Directory -Force -Path build-asan/bin
+              Copy-Item \$dll.FullName build-asan/bin/ 
+          }
 
       - name: Create test data
+        shell: pwsh
         run: |
-          echo "10 20 30" > build-asan/bin/data.txt
-          echo "5 15 25" >> build-asan/bin/data.txt
+          New-Item -ItemType Directory -Force -Path build-asan/bin
+          "10 20 30" | Out-File -FilePath build-asan/bin/data.txt -Encoding utf8NoBOM
+          "5 15 25" | Out-File -FilePath build-asan/bin/data.txt -Append -Encoding utf8NoBOM
 
       - name: Run with ASan (Verbose)
+        shell: pwsh
         env:
           ASAN_OPTIONS: verbosity=1:detect_leaks=1
         run: |
           cd build-asan/bin
-          ./parent.exe data.txt ./child.exe
+          .\parent.exe data.txt .\child.exe
