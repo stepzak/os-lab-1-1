@@ -60,6 +60,13 @@ static void parser_process_char(ParserState *state, char ch) {
 
 int main(void) {
     char buffer[READ_BUFFER_SIZE];
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    fprintf(stderr, "[CHILD] stdin handle: %p, valid: %d\n",
+            hStdin, hStdin != INVALID_HANDLE_VALUE);
+
+    DWORD fileType = GetFileType(hStdin);
+    fprintf(stderr, "[CHILD] stdin type: %lu (1=FILE, 2=CHAR, 3=PIPE)\n", fileType);
+
     ParserState state;
     parser_init(&state);
 
