@@ -72,4 +72,4 @@ jobs:
           ASAN_OPTIONS: verbosity=1:detect_leaks=1
         run: |
           cd build-asan/bin
-          ./parent.exe data.txt
+          ./parent.exe data.txt ./child.exe
