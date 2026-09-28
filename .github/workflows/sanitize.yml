@@ -84,7 +84,7 @@ jobs:
         run: |
           $binDir = Resolve-Path "build-asan/bin"
           
-          $env:PATH = "binDir;" + env:PATH
+          $env:PATH = "$binDir;" + $env:PATH
           
           cd build-asan/bin
           

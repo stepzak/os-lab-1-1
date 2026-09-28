@@ -13,21 +13,24 @@ int main(int argc, char *argv[]) {
     }
     if (argc < 2) {
         printf("Enter filename: ");
-        if (scanf("%255s", filename) != 1) {
+        if (fgets(filename, sizeof(filename), stdin) == NULL) {
             fprintf(stderr, "Failed to read file name from stdin\n");
             return EXIT_FAILURE;
         }
+        filename[strcspn(filename, "\n")] = '\0';
+
         printf("Enter path to the child process: ");
-        if (scanf("%255s", childname) != 1) {
+        if (fgets(childname, sizeof(childname), stdin) == NULL) {
             fprintf(stderr, "Failed to read child path from stdin\n");
             return EXIT_FAILURE;
         }
+        childname[strcspn(childname, "\n")] = '\0';
     } else {
-        strcpy(filename, argv[1]);
-        strcpy(childname, argv[2]);
+        strncpy(filename, argv[1], sizeof(filename) - 1);
+        strncpy(childname, argv[2], sizeof(childname) - 1);
     }
 
-
+    printf("%s\n", filename);
     os_file_handle_t file = os_file_open(filename, OS_FILE_READ);
     if (file == OS_INVALID_HANDLE) {
         perror("Failed to open file");
