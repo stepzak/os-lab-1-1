@@ -1,20 +1,24 @@
 #ifndef VEC_H
 #define VEC_H
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #define VEC_INIT_CAP 8
-#if (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
-#define VEC_CHECK_TYPE(v, elem) _Static_assert(__builtin_types_compatible_p(typeof(elem), typeof(*(v))), "Type mismatch in vector operation")
+
+#if defined(__GNUC__) || defined(__clang__)
+    #define VEC_CHECK_TYPE(v, elem) \
+        _Static_assert(__builtin_types_compatible_p(typeof(elem), typeof(*(v))), "Type mismatch in vector operation")
 #else
-#define VEC_CHECK_TYPE(v, elem) (void)elem
+    #define VEC_CHECK_TYPE(v, elem) \
+        _Generic((elem), typeof(*(v)): (void)0, default: (void)0)
 #endif
 
 typedef enum {
     CVEC_SUCCESS = 0,
     CVEC_ERROR_BAD_ALLOC,
-
 } VecStatus;
 
 typedef struct {
@@ -35,9 +39,69 @@ VecStatus v_push_raw(void** data, void* el, size_t el_size, size_t prefix);
 #define v_len(v) ((v) ? v_header(v)->length : 0)
 #define v_cap(v) ((v) ? v_header(v)->capacity : 0)
 
+#define v_at(v, i) \
+    (*( \
+        assert((v) != NULL && "Vector is NULL"), \
+        assert((size_t)(i) < v_header(v)->length && "Out of bounds"), \
+        &(v)[(i)] \
+    ))
+
+#if defined(__GNUC__) || defined(__clang__)
+    #define v_push(v, elem) ({ \
+    typeof(*(v)) _elem = (elem); \
+    v_push_raw((void**)&(v), &_elem, sizeof(*(v)), 0); \
+    })
+#else
+    #define v_push(v, elem) v_push_raw((void**)&(v), &(elem), sizeof(*(v)), 0)
 #endif
 
-#define v_reserve(v, cap) ({ vector_reserve_impl((void**)&(v), sizeof(*(v)), cap, 0); })
+#define v_pop(v) \
+    do { \
+        if (v_len(v) > 0) { \
+            v_header(v)->length--; \
+        } \
+    } while(0)
+
+#define v_free(v) \
+    do { \
+        if (v) { \
+            free(v_header(v)); \
+            (v) = NULL; \
+        } \
+    } while(0)
+
+#define v_free_with_dtor(v, dtor_func) \
+    do { \
+        if (v) { \
+            for (size_t _i = 0; _i < v_len(v); _i++) { \
+                dtor_func(&(v)[_i]); \
+            } \
+            v_free(v); \
+        } \
+    } while(0)
+
+static inline VecStatus v_reserve_inline(void** v, size_t elem_size, size_t cap) {
+    return vector_reserve_impl(v, elem_size, cap, 0);
+}
+#define v_reserve(v, cap) v_reserve_inline((void**)&(v), sizeof(*(v)), (cap))
+
+static inline VecStatus v_shrink_inline(void** v, size_t elem_size) {
+    return vector_shrink_impl(v, elem_size);
+}
+#define v_shrink(v) v_shrink_inline((void**)&(v), sizeof(*(v)))
+
+#define v_remove(v, i) vector_remove_impl((void**)&(v), sizeof(*(v)), (i))
+
+#define v_remove_with_dtor(v, i, dtor) \
+    do { \
+        size_t _idx = (i); \
+        assert(_idx < v_len(v) && "Index out of range"); \
+        dtor(&(v)[_idx]); \
+        vector_remove_impl((void**)&(v), sizeof(*(v)), _idx); \
+    } while(0)
+
+#define v_foreach(T, item, v) \
+    for (T *item = (v), *_end = (v) + v_len(v); item < _end; ++item)
 
 #define v_from_args(type, ...) \
     ({ \
@@ -45,13 +109,12 @@ VecStatus v_push_raw(void** data, void* el, size_t el_size, size_t prefix);
         size_t _n = sizeof(_tmp) / sizeof(_tmp[0]); \
         Vec(type) _v = NULL; \
         VecStatus _status = v_reserve(_v, _n); \
-        if (_status != CVEC_SUCCESS) { \
-            _v = NULL; \
-        } else { \
+        if (_status == CVEC_SUCCESS) { \
             bool _ok = true; \
             for (size_t _i = 0; _i < _n; _i++) { \
                 if (v_push(_v, _tmp[_i]) != CVEC_SUCCESS) { \
                     v_free(_v); \
+                    _v = NULL; \
                     _ok = false; \
                     break; \
                 } \
@@ -64,67 +127,8 @@ VecStatus v_push_raw(void** data, void* el, size_t el_size, size_t prefix);
 #define v_with_cap(type, cap) \
     ({ \
         Vec(type) _v = NULL; \
-        VecStatus _status = v_reserve(_v, (cap)); \
-        (_status == CVEC_SUCCESS) ? _v : NULL; \
+        VecStatus _s = v_reserve(_v, (cap)); \
+        (_s == CVEC_SUCCESS) ? _v : NULL; \
     })
 
-#define v_free(v) \
-    do { \
-        if (v) { \
-            free(v_header(v)); \
-            (v) = NULL; \
-        } \
-    } while(0)
-
-#define v_push(v, elem) \
-    ({ \
-        VEC_CHECK_TYPE(v, elem); \
-        VecStatus _status = CVEC_SUCCESS; \
-        if (v_len(v) >= v_cap(v)) { \
-            _status = vector_grow_impl((void**)&(v), sizeof(*(v)), 0); \
-        } \
-        if (_status == CVEC_SUCCESS) (v)[v_header(v)->length++] = (elem); \
-        \
-        _status; \
-    })
-
-#define v_pop(v) \
-    do { \
-        if (v_len(v) > 0) { \
-            v_header(v)->length--; \
-        } \
-    } while (0)
-
-#define v_free_with_dtor(v, dtor_func) \
-    do { \
-        if (v) { \
-            for (size_t _i = 0; _i < v_len(v); _i++) { \
-                dtor_func(&(v)[_i]); \
-            } \
-            v_free(v); \
-        } \
-    } while (0)
-
-#define v_at(v, i) \
-    (*({ \
-        assert((v) != NULL && "Vector is NULL"); \
-        size_t _i = (i); \
-        assert(_i < v_header(v)->length && "Out of bounds"); \
-        &(v)[_i]; \
-    }))
-
-#define v_foreach(T, item, v) \
-    for (T *item = (v), *_end = (v) + v_len(v); item < _end; item++)
-
-#define v_shrink(v) ({ vector_shrink_impl((void**)&(v), sizeof(*(v))); })
-
-#define v_remove(v, i) vector_remove_impl((void**)&(v), sizeof(*(v)), (i))
-
-#define v_remove_with_dtor(v, i, dtor) \
-    do { \
-        size_t _i = i; \
-        assert(_i < v_len(v) && "Index out of range"); \
-        dtor(&(v)[(_i)]); \
-        vector_remove_impl((void**) &(v), sizeof(*(v)), (_i)); \
-    } while (0)
-
+#endif // VEC_H

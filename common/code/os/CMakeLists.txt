@@ -5,7 +5,6 @@ else()
             posix/file.c
             posix/pipe.c
             posix/process.c
-            win/os_win.c
     )
 endif()
 
