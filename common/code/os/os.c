@@ -20,8 +20,8 @@ VecStatus os_proc_info_add_arg(os_process_info_t *info, const char *arg) {
             return status;
         }
     }
-
-    VecStatus ret_status = v_push(info->args, (char*)NULL);
+    char* nil = NULL;
+    VecStatus ret_status = v_push(info->args, nil);
     if (unlikely(ret_status != CVEC_SUCCESS)) {
         if (overwrote_null) {
             info->args[orig_len - 1] = NULL;
