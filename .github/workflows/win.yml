@@ -24,6 +24,6 @@ jobs:
 
       - name: Run Parent
         run: |
-          cd build/bin
+          cd build/bin/Debug
           ls
           ./parent.exe data.txt ./child.exe
