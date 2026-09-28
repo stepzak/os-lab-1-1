@@ -1,0 +1,64 @@
+name: Sanitizers
+
+on: [push, pull_request]
+
+jobs:
+  linux-sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Valgrind
+        run: sudo apt-get install -y valgrind
+
+      - name: Build with ASan
+        run: |
+          cmake -B build-asan -S . \
+            -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O1 -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address"
+          cmake --build build-asan
+
+      - name: Create test data
+        run: |
+          echo "10 20 30" > build-asan/bin/data.txt
+          echo "5 15 25" >> build-asan/bin/data.txt
+
+      - name: Run with ASan
+        run: |
+          cd build-asan/bin
+          ./parent data.txt
+
+      - name: Build for Valgrind
+        run: |
+          cmake -B build-valgrind -S . -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build-valgrind
+
+      - name: Run with Valgrind
+        run: |
+          cd build-valgrind/bin
+          valgrind --leak-check=full --error-exitcode=1 ./parent data.txt
+
+  windows-sanitizers:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Build with ASan (MSVC)
+        run: |
+          cmake -B build-asan -S . `
+            -DCMAKE_C_FLAGS="/fsanitize=address /Zi /Od" `
+            -DCMAKE_EXE_LINKER_FLAGS="/fsanitize=address"
+          cmake --build build-asan --config Release
+
+      - name: Create test data
+        run: |
+          echo "10 20 30" > build-asan/bin/data.txt
+          echo "5 15 25" >> build-asan/bin/data.txt
+
+      - name: Run with ASan
+        run: |
+          cd build-asan/bin
+          ./parent.exe data.txt

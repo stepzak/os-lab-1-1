@@ -3,7 +3,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "../os/os.h"
-#include <windows.h>
 
 
 #define OS_STDIN_FILENO ((os_file_handle_t)0)
@@ -62,12 +61,6 @@ static void parser_process_char(ParserState *state, char ch) {
 
 int main(void) {
     char buffer[READ_BUFFER_SIZE];
-    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-    fprintf(stderr, "[CHILD] stdin handle: %p, valid: %d\n",
-            hStdin, hStdin != INVALID_HANDLE_VALUE);
-
-    DWORD fileType = GetFileType(hStdin);
-    fprintf(stderr, "[CHILD] stdin type: %lu (1=FILE, 2=CHAR, 3=PIPE)\n", fileType);
 
     ParserState state;
     parser_init(&state);
