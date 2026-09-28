@@ -56,8 +56,8 @@ jobs:
         shell: pwsh
         run: |
           cmake -B build-analyze -S . `
-            -DCMAKE_C_FLAGS="/analyze /WX" `
-            -DCMAKE_CXX_FLAGS="/analyze /WX"
+           -DCMAKE_C_FLAGS="/analyze /WX /D_CRT_SECURE_NO_WARNINGS" `
+           -DCMAKE_CXX_FLAGS="/analyze /WX /D_CRT_SECURE_NO_WARNINGS"
           
 
           cmake --build build-analyze
