@@ -5,14 +5,26 @@
 
 int main(int argc, char *argv[]) {
     char filename[256];
+    char childname[256];
+    if (argc == 2) {
+        fprintf(stderr, "Usage: %s <data_file> <child_executable>\n", argv[0]);
+        fprintf(stderr, "Example: %s data.txt ./bin/child\n", argv[0]);
+        return EXIT_FAILURE;
+    }
     if (argc < 2) {
         printf("Enter filename: ");
         if (scanf("%255s", filename) != 1) {
             fprintf(stderr, "Failed to read file name from stdin\n");
             return EXIT_FAILURE;
         }
+        printf("Enter path to the child process: ");
+        if (scanf("%255s", childname) != 1) {
+            fprintf(stderr, "Failed to read child path from stdin\n");
+            return EXIT_FAILURE;
+        }
     } else {
         strcpy(filename, argv[1]);
+        strcpy(childname, argv[2]);
     }
 
 
@@ -32,8 +44,8 @@ int main(int argc, char *argv[]) {
 
     os_process_info_t info;
     os_process_info_init(&info);
-    info.cmd = "./build/bin/child";
-    os_proc_info_add_arg(&info, "./build/bin/child");
+    info.cmd = childname;
+    os_proc_info_add_arg(&info, childname);
 
     info.redirect_stdin = file;
     info.redirect_stdout = w_pipe;

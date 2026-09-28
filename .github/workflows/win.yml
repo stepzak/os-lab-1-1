@@ -26,4 +26,4 @@ jobs:
         run: |
           cd build/bin
           ls
-          ./parent.exe data.txt
+          ./parent.exe data.txt ./child.exe
