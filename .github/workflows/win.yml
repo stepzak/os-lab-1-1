@@ -19,8 +19,8 @@ jobs:
 
       - name: Create test data
         run: |
-          echo "10 20 30" > build/bin/data.txt
-          echo "5 15 25" >> build/bin/data.txt
+          echo "10 20 30" > build/bin/Debug/data.txt
+          echo "5 15 25" >> build/bin/Debug/data.txt
 
       - name: Run Parent
         run: |

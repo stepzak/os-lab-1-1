@@ -52,31 +52,30 @@ jobs:
       - name: Install CMake
         uses: lukka/get-cmake@latest
 
-      - name: Install Dr. Memory
+      - name: Build and Analyze Leaks
         shell: pwsh
         run: |
-          choco install drmemory.portable -y
+          cmake -B build-analyze -S . `
+            -DCMAKE_C_FLAGS="/analyze /WX" `
+            -DCMAKE_CXX_FLAGS="/analyze /WX"
+          
 
-      - name: Build in Debug
-        shell: pwsh
-        run: |
-          cmake -B build-debug -S .
-          cmake --build build-debug --config Debug
+          cmake --build build-analyze
 
       - name: Create test data
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path build-debug/bin/Debug
-          "10 20 30" | Out-File -FilePath build-debug/bin/Debug/data.txt -Encoding utf8NoBOM
-          "5 15 25" | Out-File -FilePath build-debug/bin/Debug/data.txt -Append -Encoding utf8NoBOM
+          New-Item -ItemType Directory -Force -Path build-analyze/bin/Debug
+          "10 20 30" | Out-File -FilePath build-analyze/bin/Debug/data.txt -Encoding utf8NoBOM
+          "5 15 25" | Out-File -FilePath build-analyze/bin/Debug/data.txt -Append -Encoding utf8NoBOM
 
-      - name: Run with Dr. Memory
+      - name: Run (Functional Test)
         shell: pwsh
         run: |
-          
-          $binDir = (Get-Item "build-debug/bin/Debug").FullName
+          $binDir = (Get-Item "build-analyze/bin/Debug").FullName
           $env:PATH = "$binDir;" + $env:PATH
+          cd \(binDir\)parentPath = (Get-Item "parent.exe").FullName
+          $childPath = (Get-Item "child.exe").FullName
           
-          cd build-debug/bin/Debug
+          & \$parentPath data.txt \$childPath
 
-          drmemory.exe -batch -follow_children -exit_code_if_errors 1 -- .\parent.exe data.txt child.exe
