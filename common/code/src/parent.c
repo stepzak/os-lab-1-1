@@ -27,8 +27,8 @@ int main(int argc, char *argv[]) {
         strncpy(filename, argv[1], sizeof(filename) - 1);
         strncpy(childname, argv[2], sizeof(childname) - 1);
     }
-    filename[strcspn(filename, "\n")] = '\0';
-    childname[strcspn(childname, "\n")] = '\0';
+    filename[sizeof(filename) - 1] = '\0';
+    childname[sizeof(childname) - 1] = '\0';
 
     os_file_handle_t file = os_file_open(filename, OS_FILE_READ);
     if (file == OS_INVALID_HANDLE) {

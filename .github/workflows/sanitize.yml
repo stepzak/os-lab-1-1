@@ -74,8 +74,9 @@ jobs:
         run: |
           $binDir = (Get-Item "build-analyze/bin/Debug").FullName
           $env:PATH = "$binDir;" + $env:PATH
-          cd \(binDir\)parentPath = (Get-Item "parent.exe").FullName
+          cd $binDir
           $childPath = (Get-Item "child.exe").FullName
+          $parentPath = (Get-Item "parent.exe").FullName
           
           & \$parentPath data.txt \$childPath
 
