@@ -39,20 +39,68 @@ void os_file_close(os_file_handle_t fd) {
 }
 
 os_ssize_t os_file_read(os_file_handle_t fd, void *buf, size_t count) {
+    if (fd == OS_INVALID_HANDLE || !buf || count == 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    HANDLE hFile;
+    if (fd == 0) {
+        hFile = GetStdHandle(STD_INPUT_HANDLE);
+    } else if (fd == 1) {
+        hFile = GetStdHandle(STD_OUTPUT_HANDLE);
+    } else if (fd == 2) {
+        hFile = GetStdHandle(STD_ERROR_HANDLE);
+    } else {
+        hFile = (HANDLE)fd;
+    }
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        errno = EBADF;
+        return -1;
+    }
+
     DWORD bytes_read = 0;
-    if (!ReadFile((HANDLE)fd, buf, (DWORD)count, &bytes_read, NULL)) {
+    if (!ReadFile(hFile, buf, (DWORD)count, &bytes_read, NULL)) {
+        DWORD error = GetLastError();
+        if (error == ERROR_BROKEN_PIPE) {
+            return 0;
+        }
         errno = EIO;
         return -1;
     }
+
     return (os_ssize_t)bytes_read;
 }
 
 os_ssize_t os_file_write(os_file_handle_t fd, const void *buf, size_t count) {
+    if (fd == OS_INVALID_HANDLE || !buf || count == 0) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    HANDLE hFile;
+    if (fd == 0) {
+        hFile = GetStdHandle(STD_INPUT_HANDLE);
+    } else if (fd == 1) {
+        hFile = GetStdHandle(STD_OUTPUT_HANDLE);
+    } else if (fd == 2) {
+        hFile = GetStdHandle(STD_ERROR_HANDLE);
+    } else {
+        hFile = (HANDLE)fd;
+    }
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        errno = EBADF;
+        return -1;
+    }
+
     DWORD bytes_written = 0;
-    if (!WriteFile((HANDLE)fd, buf, (DWORD)count, &bytes_written, NULL)) {
+    if (!WriteFile(hFile, buf, (DWORD)count, &bytes_written, NULL)) {
         errno = EIO;
         return -1;
     }
+
     return (os_ssize_t)bytes_written;
 }
 
@@ -149,15 +197,15 @@ os_ssize_t os_pipe_write(os_file_handle_t pipe, const void *buf, int count) {
 
     DWORD bytes_written = 0;
     BOOL result = WriteFile((HANDLE)pipe, buf, (DWORD)count, &bytes_written, NULL);
-    
+
     if (!result) {
         DWORD error = GetLastError();
-        
+
         if (error == ERROR_NO_DATA || error == ERROR_BROKEN_PIPE) {
             errno = EPIPE;
             return -1;
         }
-        
+
         if (error == ERROR_PIPE_BUSY) {
             errno = EAGAIN;
             return -1;
