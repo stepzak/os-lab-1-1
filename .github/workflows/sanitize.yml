@@ -55,13 +55,11 @@ jobs:
       - name: Install Dr. Memory
         shell: pwsh
         run: |
-          # Устанавливаем Dr. Memory через встроенный менеджер пакетов choco
           choco install drmemory.portable -y
 
       - name: Build in Debug
         shell: pwsh
         run: |
-          # Для корректного отчета об утечках (со строками кода) собираем в Debug
           cmake -B build-debug -S .
           cmake --build build-debug --config Debug
 
