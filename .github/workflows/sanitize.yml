@@ -26,7 +26,7 @@ jobs:
       - name: Run with ASan
         run: |
           cd build-asan/bin
-          ./parent data.txt
+          ./parent data.txt ./child
 
       - name: Build for Valgrind
         run: |
