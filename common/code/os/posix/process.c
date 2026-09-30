@@ -141,7 +141,7 @@ void os_process_close(os_process_handle_t proc) {
 }
 
 void os_process_kill(os_process_handle_t proc, unsigned ret_code) {
-    if (proc != OS_INVALID_HANDLE) return;
+    if (proc == OS_INVALID_HANDLE) return;
     (void)ret_code;
     kill((int)proc, SIGKILL);
 }

@@ -15,8 +15,10 @@ endif()
 add_subdirectory(common)
 add_subdirectory(common/code/os)
 
-add_executable(parent common/code/src/parent.c)
-add_executable(child common/code/src/child.c)
+add_executable(parent common/code/src/parent.c
+        common/code/src/child_err.h)
+add_executable(child common/code/src/child.c
+        common/code/src/child_err.h)
 
 target_link_libraries(parent PRIVATE os_lib)
 target_link_libraries(child PRIVATE os_lib)

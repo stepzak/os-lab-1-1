@@ -42,7 +42,7 @@ jobs:
       - name: Run with Valgrind
         run: |
           cd build-valgrind/bin
-          valgrind --leak-check=full --error-exitcode=1 ./parent data.txt ./child
+          valgrind --leak-check=full --error-exitcode=1 --trace-children=yes ./parent data.txt ./child
 
   windows-sanitizers:
     runs-on: windows-latest
