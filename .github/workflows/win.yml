@@ -12,18 +12,22 @@ jobs:
         uses: lukka/get-cmake@latest
 
       - name: Configure
-        run: cmake -B build -S .
+        run: |
+          cd lab/src
+          cmake -B build -S .
 
       - name: Build
         run: cmake --build build
 
       - name: Create test data
         run: |
+          cd lab/src
           echo "10 20 30" > build/bin/Debug/data.txt
           echo "5 15 25" >> build/bin/Debug/data.txt
 
       - name: Run Parent
         run: |
+          cd lab/src
           cd build/bin/Debug
           ls
           ./parent.exe data.txt ./child.exe

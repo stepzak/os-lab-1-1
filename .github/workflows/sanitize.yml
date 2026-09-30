@@ -15,6 +15,7 @@ jobs:
 
       - name: Build with ASan
         run: |
+          cd lab/src
           cmake -B build-asan -S . \
             -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -O1 -g" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address"
@@ -22,17 +23,20 @@ jobs:
 
       - name: Create test data
         run: |
+          cd lab/src
           mkdir -p build-asan/bin
           echo "10 20 30" > build-asan/bin/data.txt
           echo "5 15 25" >> build-asan/bin/data.txt
 
       - name: Run with ASan
         run: |
+          cd lab/src
           cd build-asan/bin
           ./parent data.txt ./child
 
       - name: Build for Valgrind
         run: |
+          cd lab/src
           cmake -B build-valgrind -S . -DCMAKE_BUILD_TYPE=Debug
           cmake --build build-valgrind
           mkdir -p build-valgrind/bin
@@ -41,6 +45,7 @@ jobs:
 
       - name: Run with Valgrind
         run: |
+          cd lab/src
           cd build-valgrind/bin
           valgrind --leak-check=full --error-exitcode=1 --trace-children=yes ./parent data.txt ./child
 
@@ -55,6 +60,8 @@ jobs:
       - name: Build and Analyze Leaks
         shell: pwsh
         run: |
+          cd lab/src
+
           cmake -B build-analyze -S . `
            -DCMAKE_C_FLAGS="/analyze /WX /D_CRT_SECURE_NO_WARNINGS" `
            -DCMAKE_CXX_FLAGS="/analyze /WX /D_CRT_SECURE_NO_WARNINGS"
@@ -65,6 +72,8 @@ jobs:
       - name: Create test data
         shell: pwsh
         run: |
+          cd lab/src
+
           New-Item -ItemType Directory -Force -Path build-analyze/bin/Debug
           "10 20 30" | Out-File -FilePath build-analyze/bin/Debug/data.txt -Encoding utf8NoBOM
           "5 15 25" | Out-File -FilePath build-analyze/bin/Debug/data.txt -Append -Encoding utf8NoBOM
@@ -72,6 +81,7 @@ jobs:
       - name: Run (Functional Test)
         shell: pwsh
         run: |
+          cd lab/src
           $binDir = (Get-Item "build-analyze/bin/Debug").FullName
           $env:PATH = "$binDir;" + $env:PATH
           cd $binDir
