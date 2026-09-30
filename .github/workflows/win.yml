@@ -17,7 +17,9 @@ jobs:
           cmake -B build -S .
 
       - name: Build
-        run: cmake --build build
+        run: |
+          cd lab/src
+          cmake --build build
 
       - name: Create test data
         run: |
