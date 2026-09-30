@@ -33,7 +33,7 @@
 
 .vscode/*
 .idea/
-*build/*
+../../build/bin
 build-win/
 build/
 cmake-build-debug/
