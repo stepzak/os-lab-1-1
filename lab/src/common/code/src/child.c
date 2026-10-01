@@ -92,15 +92,45 @@ static bool parser_process_char(ParserState *state, char ch) {
     return parser_flush(state);
 }
 
+static void parser_reset_line(ParserState *state) {
+    parser_reset_number(state);
+    state->sum = 0;
+    state->count = 0;
+}
+
+static bool send_message(ChildStatus status, int sys_errno,
+                         int result, int count) {
+    ChildMessage msg = {
+        .status = status,
+        .sys_errno = sys_errno,
+        .result = result,
+        .count = count,
+    };
+
+    return os_file_write_full(
+        OS_STDOUT_FILENO, &msg, sizeof(msg)) == (os_ssize_t)sizeof(msg);
+}
+
+static bool send_line_result(ParserState *state) {
+    if (state->count == 0) {
+        parser_reset_line(state);
+        return true;
+    }
+
+    bool sent = send_message(
+        CHILD_OK, 0, (int)state->sum, state->count);
+    parser_reset_line(state);
+    return sent;
+}
+
 int main(void) {
     char buffer[READ_BUFFER_SIZE];
     ParserState state;
-    ChildMessage msg = {0};
-
     parser_init(&state);
 
     os_ssize_t bytes_read = 0;
     bool parsing_failed = false;
+    size_t line_number = 1;
 
     while ((bytes_read = os_file_read(
                 OS_STDIN_FILENO,
@@ -108,14 +138,28 @@ int main(void) {
                 sizeof(buffer))) > 0) {
 
         for (os_ssize_t i = 0; i < bytes_read; i++) {
-            if (!parser_process_char(&state, buffer[i])) {
+            char ch = buffer[i];
+
+            if (ch == '\n') {
+                if (!parser_flush(&state)) {
+                    parsing_failed = true;
+                    break;
+                }
+                if (!send_line_result(&state)) {
+                    perror("Failed to send line result to parent");
+                    return EXIT_FAILURE;
+                }
+                line_number++;
+                continue;
+            }
+
+            if (!parser_process_char(&state, ch)) {
                 fprintf(
                     stderr,
-                    "Integer overflow while processing number %d\n",
+                    "Integer overflow in line %zu while processing number %d\n",
+                    line_number,
                     state.count + 1
                 );
-
-                msg.status = CHILD_OVERFLOW;
                 parsing_failed = true;
                 break;
             }
@@ -127,29 +171,24 @@ int main(void) {
     }
 
     if (bytes_read < 0) {
-        msg.status = CHILD_SYS_ERR;
-        msg.sys_errno = errno;
-    } else if (msg.status == CHILD_OK && !parser_flush(&state)) {
-        msg.status = CHILD_OVERFLOW;
-    }
-
-    if (msg.status == CHILD_OK) {
-        msg.result = (int)state.sum;
-        msg.count = state.count;
-    }
-
-    os_ssize_t written = os_file_write_full(
-        OS_STDOUT_FILENO,
-        &msg,
-        sizeof(msg)
-    );
-
-    if (written != sizeof(msg)) {
-        perror("Failed to send result to parent");
+        int read_errno = errno;
+        if (!send_message(CHILD_SYS_ERR, read_errno, 0, 0)) {
+            perror("Failed to send read error to parent");
+        }
         return EXIT_FAILURE;
     }
 
-    return msg.status == CHILD_OK
-        ? EXIT_SUCCESS
-        : EXIT_FAILURE;
+    if (parsing_failed || !parser_flush(&state)) {
+        if (!send_message(CHILD_OVERFLOW, 0, 0, 0)) {
+            perror("Failed to send overflow error to parent");
+        }
+        return EXIT_FAILURE;
+    }
+
+    if (!send_line_result(&state)) {
+        perror("Failed to send final line result to parent");
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }

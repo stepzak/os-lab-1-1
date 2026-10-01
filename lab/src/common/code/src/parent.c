@@ -100,62 +100,68 @@ int main(int argc, char *argv[]) {
     os_file_close(file);
     os_file_close(w_pipe);
 
-    ChildMessage msg = {0};
-    int exit_code = EXIT_FAILURE;
+    int exit_code = EXIT_SUCCESS;
 
-    os_ssize_t bytes_read = os_pipe_read_full(
-        r_pipe,
-        &msg,
-        sizeof(msg)
-    );
+    for (;;) {
+        ChildMessage msg = {0};
+        os_ssize_t bytes_read = os_pipe_read_full(
+            r_pipe, &msg, sizeof(msg));
 
-    if (bytes_read < 0) {
-        perror("Failed to receive child result");
-        goto cleanup;
+        if (bytes_read < 0) {
+            perror("Failed to receive child result");
+            exit_code = EXIT_FAILURE;
+            break;
+        }
+
+        if (bytes_read == 0) {
+            break;
+        }
+
+        if (bytes_read != (os_ssize_t)sizeof(msg)) {
+            fprintf(
+                stderr,
+                "Incomplete child message: expected %zu bytes, received %td\n",
+                sizeof(msg),
+                bytes_read
+            );
+            exit_code = EXIT_FAILURE;
+            break;
+        }
+
+        switch (msg.status) {
+        case CHILD_OK:
+            printf(
+                "Sum of %d numbers: %d\n",
+                msg.count,
+                msg.result
+            );
+            fflush(stdout);
+            break;
+
+        case CHILD_OVERFLOW:
+            fprintf(stderr, "Integer overflow during number parsing\n");
+            exit_code = EXIT_FAILURE;
+            break;
+
+        case CHILD_SYS_ERR:
+            errno = msg.sys_errno;
+            perror("Child error");
+            exit_code = EXIT_FAILURE;
+            break;
+
+        default:
+            fprintf(
+                stderr,
+                "Unknown child status: %d\n",
+                (int)msg.status
+            );
+            exit_code = EXIT_FAILURE;
+            break;
+        }
+
+        if (exit_code != EXIT_SUCCESS) break;
     }
 
-    if (bytes_read != (os_ssize_t)sizeof(msg)) {
-        fprintf(
-            stderr,
-            "Incomplete child message: expected %zu bytes, received %td\n",
-            sizeof(msg),
-            bytes_read
-        );
-        goto cleanup;
-    }
-
-    switch (msg.status) {
-    case CHILD_OK:
-        printf(
-            "Sum of %d numbers: %d\n",
-            msg.count,
-            msg.result
-        );
-        exit_code = EXIT_SUCCESS;
-        break;
-
-    case CHILD_OVERFLOW:
-        fprintf(
-            stderr,
-            "Integer overflow during number parsing\n"
-        );
-        break;
-
-    case CHILD_SYS_ERR:
-        errno = msg.sys_errno;
-        perror("Child error");
-        break;
-
-    default:
-        fprintf(
-            stderr,
-            "Unknown child status: %d\n",
-            (int)msg.status
-        );
-        break;
-    }
-
-cleanup:
     os_process_close(pid);
     os_file_close(r_pipe);
     os_process_info_destroy(&info);
