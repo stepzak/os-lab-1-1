@@ -13,6 +13,10 @@ add_library(os_lib STATIC
         ${OS_PLATFORM_IMPL}
 )
 
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(os_lib PRIVATE -save-temps=obj -fverbose-asm -g)
+endif()
+
 target_include_directories(os_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/code/os)
 
 target_include_directories(os_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/code/os/posix)
